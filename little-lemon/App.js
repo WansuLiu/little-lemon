@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Onboarding from './screens/Onboarding'; // Ensure this path is correct
 import Profile from './screens/Profile'; // Import the Profile screen
+import HomeScreen from './screens/Home'
 import SplashScreen from './screens/SplashScreen';
 
 const Stack = createNativeStackNavigator();
@@ -41,7 +42,7 @@ function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={isOnboardingCompleted ? "Profile" : "Onboarding"}
+        initialRouteName={isOnboardingCompleted ? "Home" : "Onboarding"}
       >
         {/* Define both screens unconditionally */}
         <Stack.Screen 
@@ -52,6 +53,11 @@ function App() {
         <Stack.Screen 
           name="Onboarding" 
           component={(props) => <Onboarding {...props} onComplete={handleOnboardingComplete} />}
+          options={{ headerShown: false }} 
+        />
+         <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
           options={{ headerShown: false }} 
         />
       </Stack.Navigator>

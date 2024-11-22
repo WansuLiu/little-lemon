@@ -18,7 +18,7 @@ const Onboarding = ({ navigation, onComplete }) => {
       ]);
       console.log('Onboarding status saved as completed.');
       onComplete(); // Call the onComplete callback
-      navigation.navigate('Profile')
+      navigation.navigate('Home')
       // Navigate to the Profile screen
     } catch (error) {
       console.error('Error saving onboarding status:', error);
