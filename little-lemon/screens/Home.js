@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
 import { debounce } from 'lodash'; // For debouncing search
 
-const HomeScreen = ({ navigation }) => { // Add 'navigation' prop here
+const HomeScreen = ({ navigation }) => {
   const [profileImage, setProfileImage] = useState(null);
+  const [userName, setUserName] = useState('');
   const [menuData, setMenuData] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchText, setSearchText] = useState(''); // Track search input
@@ -78,16 +80,23 @@ const HomeScreen = ({ navigation }) => { // Add 'navigation' prop here
     }
   };
 
-  useEffect(() => {
-    const loadProfileImage = async () => {
-      try {
-        const storedProfileImage = await AsyncStorage.getItem('userImage');
-        if (storedProfileImage) setProfileImage(storedProfileImage);
-      } catch (error) {
-        console.error('Error loading avatar image:', error);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const loadProfileData = async () => {
+        try {
+          const storedProfileImage = await AsyncStorage.getItem('userImage');
+          const storedName = await AsyncStorage.getItem('userName');
+          setProfileImage(storedProfileImage || null);
+          setUserName(storedName || '');
+        } catch (error) {
+          console.error('Error loading profile data:', error);
+        }
+      };
+      loadProfileData();
+    }, [])
+  );
 
+  useEffect(() => {
     const loadMenuData = async () => {
       const db = await initializeDatabase();
 
@@ -107,7 +116,6 @@ const HomeScreen = ({ navigation }) => { // Add 'navigation' prop here
       setMenuData(data);
     };
 
-    loadProfileImage();
     loadMenuData();
   }, []);
 
@@ -156,35 +164,42 @@ const HomeScreen = ({ navigation }) => { // Add 'navigation' prop here
     </View>
   );
 
-  // Function to filter menu data based on search text and selected categories
+  const getUserInitials = (name) => {
+    const nameParts = name.split(' ');
+    return nameParts.map(part => part.charAt(0)).join('').toUpperCase() || '?';
+  };
+
   const filteredMenuData = menuData.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchText.toLowerCase());
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(item.category);
     return matchesSearch && matchesCategory;
   });
 
-  // Debounced search handler
   const handleSearchChange = debounce((text) => {
     setSearchText(text);
   }, 500);
-  
+
   return (
     <View style={styles.container}>
       <Image
         source={require('../assets/images/Lemon-Logo.png')}
         style={styles.logo}
       />
-      {/* Make profile image tappable */}
+      <Text style={styles.heroText}>Welcome! We are a family owned Mediterranean restaurant!</Text>
       <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-        <Image source={{ uri: profileImage }} style={styles.profileImage} />
+        {profileImage ? (
+          <Image source={{ uri: profileImage }} style={styles.profileImage} />
+        ) : (
+          <View style={styles.placeholderImage}>
+            <Text style={styles.initials}>{getUserInitials(userName)}</Text>
+          </View>
+        )}
       </TouchableOpacity>
-      {/* Search Bar */}
       <TextInput
         style={styles.searchBar}
         placeholder="Search for a dish..."
-        placeholderTextColor="#aaa"
         onChangeText={handleSearchChange}
-      /> 
+      />
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id.toString()}
@@ -202,6 +217,7 @@ const HomeScreen = ({ navigation }) => { // Add 'navigation' prop here
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -218,12 +234,122 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     position: 'absolute',
-    top: 45,
-    right: 30,
+    top: -140,
+    right: -160,
     borderWidth: 2,
     borderColor: '#fff',
   },
-  // Rest of the styles...
+  categoryList: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    marginBottom: 30,
+    flexDirection: 'row',
+  },
+  categoryItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    marginHorizontal: 10,
+    borderRadius: 15,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedCategoryItem: {
+    backgroundColor: '#ffcc00',
+  },
+  categoryText: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  heroText:{
+ fontSize: 16,
+    color: '#000',
+    fontWeight: '300',
+    textAlign: 'center',
+  },
+  selectedCategoryText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  menuList: {
+    paddingHorizontal: 10,
+    paddingTop: 10,
+  },
+  menuItem: {
+    flexDirection: 'column',
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+    
+  },
+  menuImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 10,
+    alignSelf:'center'
+  },
+  menuDetails: {
+    flex: 1,
+    justifyContent: 'center'
+  },
+  menuName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 5,
+  },
+  menuDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  menuPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  
+  // Search Bar Styling
+  searchBar: {
+    width: '90%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f0f0f0',
+    paddingLeft: 15,
+    fontSize: 16,
+    marginTop: 20,
+    marginBottom: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  placeholderImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: -140,
+    right: -160,
+  },
+  initials: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+  },
 });
 
 export default HomeScreen;

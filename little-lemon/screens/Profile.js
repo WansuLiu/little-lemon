@@ -36,6 +36,7 @@ const Profile = ({navigation}) => {
         if (storedImageUri) setImageUri(storedImageUri);
         if (storedSpecialOffers !== null) setSpecialOffers(JSON.parse(storedSpecialOffers));
         if (storedNewsletters !== null) setNewsletters(JSON.parse(storedNewsletters));
+        console.log({storedNewsletters});
       } catch (error) {
         console.error('Error loading profile data:', error);
       }
@@ -47,9 +48,9 @@ const Profile = ({navigation}) => {
     setPhone(text);
     setIsValidPhone(validatePhoneNumber(text));
   };
-
+  
   const handleBackPress = () => {
-    console.log("Back button pressed, but no previous screen.");
+    navigation.navigate("Home");
   };
 
   const handleImagePicker = async () => {
@@ -179,11 +180,16 @@ const Profile = ({navigation}) => {
           <View style={styles.checkbox}>
             <CheckBox 
               label="Special Offers" 
-              onChange={(checked) => setSpecialOffers(checked)} 
+              value={specialOffers}
+              onChange={(checked) => {
+                setNewsletters(checked);}}
             />
             <CheckBox 
               label="Newsletters" 
-              onChange={(checked) => setNewsletters(checked)} 
+              value={newsletters}
+              onChange={(checked) => {
+                setNewsletters(checked);
+              }}
             /> 
           </View>
 
